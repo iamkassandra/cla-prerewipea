@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS-1 · Command Centre</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--bg1:#111118;--bg2:#16161f;--bg3:#1c1c28;
+  --border:#2a2a3d;--border2:#3a3a55;
+  --amber:#f0a500;--amber2:#ffbc2e;--amber3:#7a5200;
+  --green:#00d084;--green2:#00ff9f;--red:#ff4d6a;--blue:#4d9fff;
+  --text:#e8e8f0;--text2:#9090a8;--text3:#5a5a72;
+  --mono:'JetBrains Mono',monospace;--ui:'Syne',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:13px;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+/* ── topbar ── */
+.topbar{height:48px;background:var(--bg1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0}
+.logo{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--amber);letter-spacing:.15em}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:8px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,208,132,.4)}50%{opacity:.6;box-shadow:0 0 0 4px rgba(0,208,132,0)}}
+.top-badges{display:flex;gap:8px;margin-left:auto;align-items:center}
+.pill{border:1px solid var(--border2);border-radius:4px;padding:3px 8px;font-size:10px;font-family:var(--mono);color:var(--text2)}
+.pill.amber{border-color:var(--amber3);color:var(--amber);background:#150d00}
+.pill.green{border-color:#003d20;color:var(--green);background:#00150a}
+.pill.red{border-color:#4d1520;color:var(--red);background:#1a0008}
+
+/* ── layout ── */
+.body{display:flex;flex:1;overflow:hidden}
+.sidebar{width:196px;min-width:196px;background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.nav{padding:12px 8px;flex:1}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--text2);font-size:11px;font-family:var(--mono);letter-spacing:.05em;margin-bottom:2px;transition:all .12s;user-select:none}
+.nav-item:hover{background:var(--bg2);color:var(--text)}
+.nav-item.active{background:var(--bg3);color:var(--amber);border:1px solid var(--border2)}
+.nav-badge{margin-left:auto;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:600}
+.nb-amber{background:#2a1a00;color:var(--amber)}
+.nb-red{background:#2a0010;color:var(--red)}
+.nb-green{background:#003d20;color:var(--green)}
+.sidebar-footer{padding:12px;border-top:1px solid var(--border)}
+.agent-box{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 10px}
+.agent-lbl{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.1em;margin-bottom:3px}
+.agent-val{font-family:var(--mono);font-size:11px;color:var(--green);font-weight:500}
+
+/* ── main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.stats{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.stat{flex:1;padding:10px 14px;border-right:1px solid var(--border)}
+.stat:last-child{border-right:none}
+.stat-n{font-family:var(--mono);font-size:20px;font-weight:600;line-height:1}
+.stat-l{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px;letter-spacing:.08em}
+.content{flex:1;display:grid;grid-template-columns:1fr 310px;overflow:hidden}
+
+/* ── queue panel ── */
+.queue-panel{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden}
+.panel-hdr{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.panel-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase}
+.panel-lbl.amber{color:var(--amber)}
+.queue-list{flex:1;overflow-y:auto;padding:10px}
+.queue-list::-webkit-scrollbar{width:3px}
+.queue-list::-webkit-scrollbar-thumb{background:var(--border2)}
+
+/* ── account cards ── */
+.acard{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:7px;overflow:hidden;transition:border-color .12s}
+.acard:hover{border-color:var(--border2)}
+.acard.pending{border-left:3px solid var(--amber)}
+.acard.processing{border-left:3px solid var(--blue)}
+.acard.done{border-left:3px solid var(--green);opacity:.55}
+.acard.flagged{border-left:3px solid var(--red)}
+.card-hdr{padding:9px 11px;display:flex;align-items:center;gap:9px;cursor:pointer}
+.picon{width:30px;height:30px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text);flex-shrink:0;font-family:var(--mono)}
+.card-meta{flex:1;min-width:0}
+.card-name{font-size:12px;font-weight:600}
+.card-src{font-size:10px;color:var(--text2);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status-badge{font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:3px;flex-shrink:0}
+.sb-pending{background:#2a1a00;color:var(--amber);border:1px solid var(--amber3)}
+.sb-processing{background:#00153a;color:var(--blue);border:1px solid #1a3a6a}
+.sb-done{background:#001a0d;color:var(--green);border:1px solid #003d20}
+.sb-flagged{background:#2a0010;color:var(--red);border:1px solid #4d1520}
+.card-body{padding:0 11px 10px;border-top:1px solid var(--border)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px}
+.detail{background:var(--bg3);border-radius:4px;padding:5px 7px}
+.d-lbl{font-size:9px;color:var(--text3);font-family:var(--mono);letter-spacing:.07em;margin-bottom:2px}
+.d-val{font-size:11px;font-family:var(--mono);color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.d-val.amber{color:var(--amber)}
+.actions{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.btn{padding:5px 9px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid;font-family:var(--mono);letter-spacing:.04em;transition:all .12s}
+.btn-approve{background:#001a0d;border-color:#003d20;color:var(--green)}
+.btn-approve:hover{background:#003d20}
+.btn-export{background:#00153a;border-color:#1a3a6a;color:var(--blue)}
+.btn-export:hover{background:#1a3a6a}
+.btn-skip{background:var(--bg3);border-color:var(--border2);color:var(--text2)}
+.btn-skip:hover{background:var(--border)}
+.btn-delete{background:#2a0010;border-color:#4d1520;color:var(--red)}
+.btn-delete:hover{background:#4d1520}
+.progress{height:3px;background:var(--border);border-radius:2px;margin-top:7px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;background:var(--blue);transition:width .6s ease}
+
+/* ── right panel ── */
+.right-panel{display:flex;flex-direction:column;overflow:hidden}
+.chat-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border2)}
+.msg{max-width:92%;display:flex;flex-direction:column;gap:2px}
+.msg.agent{align-self:flex-start}
+.msg.user{align-self:flex-end}
+.msg-from{font-size:9px;font-family:var(--mono);color:var(--text3);letter-spacing:.07em}
+.msg.user .msg-from{text-align:right;color:var(--amber3)}
+.bubble{padding:8px 10px;border-radius:7px;font-size:11px;line-height:1.55;font-family:var(--mono);white-space:pre-wrap;word-break:break-word}
+.msg.agent .bubble{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:2px}
+.msg.user .bubble{background:#1a1000;border:1px solid var(--amber3);color:var(--amber2);border-bottom-right-radius:2px}
+.input-wrap{border-top:1px solid var(--border);padding:9px;flex-shrink:0}
+.input-row{display:flex;gap:6px;align-items:flex-end}
+textarea.chat-in{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:7px 9px;color:var(--text);font-family:var(--mono);font-size:11px;resize:none;min-height:34px;max-height:96px;outline:none;transition:border-color .12s;line-height:1.4}
+textarea.chat-in:focus{border-color:var(--amber3)}
+.send-btn{background:var(--amber3);border:1px solid var(--amber);border-radius:6px;color:var(--amber2);padding:7px 11px;cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:600;transition:all .12s}
+.send-btn:hover{background:var(--amber);color:#000}
+.send-btn:disabled{opacity:.35;cursor:default}
+.log-panel{height:200px;border-top:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.log-list{flex:1;overflow-y:auto;padding:7px;font-family:var(--mono);font-size:10px}
+.log-list::-webkit-scrollbar{width:3px}
+.log-list::-webkit-scrollbar-thumb{background:var(--border2)}
+.log-row{padding:2px 0;border-bottom:1px solid rgba(42,42,61,.35);display:flex;gap:7px;line-height:1.4}
+.lt{color:var(--text3);flex-shrink:0}
+.ltype{flex-shrink:0;padding:0 4px;border-radius:2px;font-size:9px;font-weight:600}
+.ltype.info{background:#001530;color:var(--blue)}
+.ltype.ok{background:#001a0d;color:var(--green)}
+.ltype.warn{background:#2a1a00;color:var(--amber)}
+.ltype.err{background:#2a0010;color:var(--red)}
+.lmsg{color:var(--text2);flex:1}
+.thinking span{animation:blink 1.2s infinite;opacity:0}
+.thinking span:nth-child(2){animation-delay:.2s}
+.thinking span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+
+/* ── import modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--bg1);border:1px solid var(--border2);border-radius:10px;padding:24px;width:460px;max-width:90vw}
+.modal h2{font-family:var(--mono);font-size:13px;color:var(--amber);margin-bottom:16px;letter-spacing:.1em}
+.import-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.import-btn{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px;cursor:pointer;text-align:center;transition:border-color .12s}
+.import-btn:hover{border-color:var(--border2)}
+.import-btn .ib-title{font-family:var(--mono);font-size:11px;color:var(--text);margin-bottom:3px;font-weight:600}
+.import-btn .ib-sub{font-family:var(--mono);font-size:9px;color:var(--text3)}
+.modal-close{background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text2);padding:6px 14px;font-family:var(--mono);font-size:11px;cursor:pointer}
+.modal-close:hover{color:var(--text)}
+input[type=file]{display:none}
+select{background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-family:var(--mono);font-size:10px;padding:3px 6px;outline:none}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="logo-dot"></span>NEXUS-1</div>
+  <div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.05em">sovereign agent · account consolidation</div>
+  <div class="top-badges">
+    <div class="pill amber" id="pillPending">0 PENDING</div>
+    <div class="pill green" id="pillDone">0 CLEARED</div>
+    <div class="pill red" id="pillFlagged">0 FLAGGED</div>
+    <div class="pill" style="cursor:pointer" onclick="showImport()">+ IMPORT</div>
+  </div>
+</div>
+
+<div class="body">
+  <div class="sidebar">
+    <div class="nav">
+      <div class="nav-item active">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1.5" width="11" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M3.5 10.5V12M9.5 10.5V12M1.5 10.5h10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+        ACCOUNTS
+        <span class="nav-badge nb-amber" id="navPending">0</span>
+      </div>
+      <div class="nav-item">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.1"/><path d="M6.5 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+        HISTORY
+      </div>
+      <div class="nav-item">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1.5" y="4.5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M4.5 4.5V3a2 2 0 014 0v1.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="6.5" cy="8" r="1" fill="currentColor"/></svg>
+        VAULT
+        <span class="nav-badge nb-green" id="navVault">0</span>
+      </div>
+      <div class="nav-item" onclick="showImport()">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v7M3.5 5.5L6.5 8l3-2.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 9.5V12h11V9.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+        IMPORT
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="agent-box">
+        <div class="agent-lbl">AGENT STATE</div>
+        <div class="agent-val" id="agentState">READY</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="stats">
+      <div class="stat"><div class="stat-n" id="statTotal">0</div><div class="stat-l">TOTAL FOUND</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--green)" id="statDone">0</div><div class="stat-l">CLEARED</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--amber)" id="statPending">0</div><div class="stat-l">PENDING</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--red)" id="statFlagged">0</div><div class="stat-l">FLAGGED</div></div>
+    </div>
+    <div class="content">
+      <div class="queue-panel">
+        <div class="panel-hdr">
+          <div class="panel-lbl amber">QUEUE</div>
+          <select id="filterSel" onchange="renderQueue()">
+            <option value="all">ALL</option>
+            <option value="pending">PENDING</option>
+            <option value="flagged">FLAGGED</option>
+            <option value="processing">PROCESSING</option>
+            <option value="done">DONE</option>
+          </select>
+          <div style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--text3)" id="qCount"></div>
+        </div>
+        <div class="queue-list" id="queueList"></div>
+      </div>
+
+      <div class="right-panel">
+        <div class="chat-wrap">
+          <div class="panel-hdr">
+            <div class="panel-lbl">NEXUS-1 CHAT</div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:5px">
+              <div class="logo-dot" style="width:5px;height:5px;margin:0"></div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--green)">LIVE</div>
+            </div>
+          </div>
+          <div class="chat-msgs" id="chatMsgs"></div>
+          <div class="input-wrap">
+            <div class="input-row">
+              <textarea class="chat-in" id="chatIn" placeholder="command the agent..." rows="1" onkeydown="onKey(event)"></textarea>
+              <button class="send-btn" id="sendBtn" onclick="sendMsg()">SEND</button>
+            </div>
+          </div>
+        </div>
+        <div class="log-panel">
+          <div class="panel-hdr">
+            <div class="panel-lbl">LIVE LOG</div>
+            <div style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--text3)" id="logCount">0 entries</div>
+          </div>
+          <div class="log-list" id="logList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-bg" id="importModal" style="display:none">
+  <div class="modal">
+    <h2>IMPORT BROWSER DATA</h2>
+    <div class="import-grid">
+      <div class="import-btn" onclick="triggerImport('chrome')">
+        <div class="ib-title">Chrome / Brave</div>
+        <div class="ib-sub">History SQLite file</div>
+        <div class="ib-sub" style="margin-top:4px;color:var(--text3)">~/Library/Application Support/<br>Google/Chrome/Default/History</div>
+      </div>
+      <div class="import-btn" onclick="triggerImport('firefox')">
+        <div class="ib-title">Firefox</div>
+        <div class="ib-sub">places.sqlite file</div>
+        <div class="ib-sub" style="margin-top:4px;color:var(--text3)">~/Library/Application Support/<br>Firefox/Profiles/*/places.sqlite</div>
+      </div>
+      <div class="import-btn" onclick="triggerImport('passwords','Chrome')">
+        <div class="ib-title">Chrome Passwords</div>
+        <div class="ib-sub">Exported CSV</div>
+        <div class="ib-sub" style="margin-top:4px;color:var(--text3)">chrome://password-manager/<br>passwords → Export</div>
+      </div>
+      <div class="import-btn" onclick="triggerImport('passwords','Bitwarden')">
+        <div class="ib-title">Bitwarden / 1Password</div>
+        <div class="ib-sub">Exported CSV</div>
+        <div class="ib-sub" style="margin-top:4px;color:var(--text3)">Settings → Export Vault</div>
+      </div>
+    </div>
+    <button class="modal-close" onclick="hideImport()">CLOSE</button>
+    <input type="file" id="fileInput" onchange="uploadFile()">
+  </div>
+</div>
+
+<script>
+const BASE = window.location.origin;
+let queue = [];
+let chatHistory = [];
+let logs = [];
+let currentImportType = '';
+let currentImportSource = '';
+let expandedCards = new Set();
+
+// ── WebSocket live logs ──────────────────────────────────────────────────────
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/ws/logs`);
+  ws.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    if (d.type === 'history') { logs = d.logs; renderLogs(); }
+    else if (d.type === 'log') { logs.unshift(d.entry); renderLogs(); }
+  };
+  ws.onclose = () => setTimeout(connectWS, 3000);
+}
+
+// ── Queue ────────────────────────────────────────────────────────────────────
+async function loadQueue() {
+  try {
+    const r = await fetch(`${BASE}/api/queue`);
+    queue = await r.json();
+    renderQueue();
+    updateStats();
+  } catch(e) { console.error('Queue load:', e); }
+}
+
+function renderQueue() {
+  const filter = document.getElementById('filterSel').value;
+  const filtered = filter === 'all' ? queue : queue.filter(a => a.status === filter);
+  document.getElementById('qCount').textContent = filtered.length + ' accounts';
+  document.getElementById('queueList').innerHTML = filtered.map(a => cardHTML(a)).join('');
+}
+
+function cardHTML(a) {
+  const exp = expandedCards.has(a.id);
+  const statusClass = `sb-${a.status}`;
+  return `<div class="acard ${a.status}" id="ac-${a.id}">
+    <div class="card-hdr" onclick="toggleCard('${a.id}')">
+      <div class="picon">${(a.platform||'??').slice(0,2).toUpperCase()}</div>
+      <div class="card-meta">
+        <div class="card-name">${a.platform||a.domain}</div>
+        <div class="card-src">${a.source||''} ${a.user ? '· '+a.user : ''}</div>
+      </div>
+      <span class="status-badge ${statusClass}">${a.status.toUpperCase()}</span>
+    </div>
+    ${exp ? `<div class="card-body">
+      <div class="detail-grid">
+        <div class="detail"><div class="d-lbl">USERNAME</div><div class="d-val">${a.user||'—'}</div></div>
+        <div class="detail"><div class="d-lbl">EMAIL</div><div class="d-val">${(a.email||'—').slice(0,20)}</div></div>
+        <div class="detail"><div class="d-lbl">PASSWORD</div><div class="d-val">${a.pass?'••••••••':'—'}</div></div>
+        <div class="detail"><div class="d-lbl">VISITS</div><div class="d-val">${a.visitCount||a.data||'—'}</div></div>
+      </div>
+      <div class="detail" style="margin-top:5px"><div class="d-lbl">DOMAIN</div><div class="d-val">${a.domain||'—'}</div></div>
+      <div class="detail" style="margin-top:5px"><div class="d-lbl">SUGGESTED</div><div class="d-val amber">${(a.action||'review').toUpperCase()}</div></div>
+      ${a.status !== 'done' ? `
+      <div class="actions">
+        <button class="btn btn-approve" onclick="approve('${a.id}')">APPROVE + RUN</button>
+        <button class="btn btn-export" onclick="exportOnly('${a.id}')">EXPORT ONLY</button>
+        <button class="btn btn-skip" onclick="skip('${a.id}')">SKIP</button>
+        <button class="btn btn-delete" onclick="deleteAcc('${a.id}')">DELETE</button>
+      </div>` : '<div style="font-family:var(--mono);font-size:10px;color:var(--green);margin-top:8px">✓ COMPLETE · archived to vault</div>'}
+      ${a.status === 'processing' ? `<div class="progress"><div class="progress-fill" style="width:60%"></div></div>` : ''}
+    </div>` : ''}
+  </div>`;
+}
+
+function toggleCard(id) {
+  if (expandedCards.has(id)) expandedCards.delete(id);
+  else expandedCards.add(id);
+  renderQueue();
+}
+
+async function patchAccount(id, updates) {
+  await fetch(`${BASE}/api/queue/${id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(updates) });
+  await loadQueue();
+}
+
+function approve(id) {
+  const a = queue.find(x => x.id === id);
+  patchAccount(id, { status: 'processing' });
+  appendMsg('user', `APPROVE ${id} — run full workflow for ${a?.platform}`);
+  sendToAgent(`APPROVE ${id} — run full export and deletion workflow for ${a?.platform} (${a?.user || a?.domain})`);
+  setTimeout(() => patchAccount(id, { status: 'done' }), 5000);
+}
+
+function exportOnly(id) {
+  const a = queue.find(x => x.id === id);
+  appendMsg('user', `EXPORT ${id} — export only, keep account`);
+  sendToAgent(`EXPORT ${id} — export data only for ${a?.platform}, do not delete the account`);
+}
+
+function skip(id) {
+  const a = queue.find(x => x.id === id);
+  patchAccount(id, { status: 'pending' });
+  expandedCards.delete(id);
+  renderQueue();
+}
+
+function deleteAcc(id) {
+  const a = queue.find(x => x.id === id);
+  appendMsg('user', `DELETE ${id} — ${a?.platform}`);
+  sendToAgent(`DELETE ${id} — delete ${a?.platform} (${a?.user || a?.domain}) without export. Warn me of risks.`);
+}
+
+function updateStats() {
+  const pending = queue.filter(a => a.status === 'pending').length;
+  const done = queue.filter(a => a.status === 'done').length;
+  const flagged = queue.filter(a => a.status === 'flagged').length;
+  document.getElementById('statTotal').textContent = queue.length;
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statFlagged').textContent = flagged;
+  document.getElementById('pillPending').textContent = pending + ' PENDING';
+  document.getElementById('pillDone').textContent = done + ' CLEARED';
+  document.getElementById('pillFlagged').textContent = flagged + ' FLAGGED';
+  document.getElementById('navPending').textContent = pending;
+}
+
+// ── Chat ─────────────────────────────────────────────────────────────────────
+function appendMsg(role, text, thinking = false) {
+  const c = document.getElementById('chatMsgs');
+  const d = document.createElement('div');
+  d.className = `msg ${role}`;
+  const from = document.createElement('div');
+  from.className = 'msg-from';
+  from.textContent = role === 'agent' ? 'NEXUS-1' : 'YOU';
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  if (thinking) b.innerHTML = `working <span class="thinking"><span>.</span><span>.</span><span>.</span></span>`;
+  else b.textContent = text;
+  d.append(from, b);
+  c.append(d);
+  c.scrollTop = c.scrollHeight;
+  return b;
+}
+
+async function sendMsg() {
+  const inp = document.getElementById('chatIn');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  inp.style.height = '34px';
+  sendToAgent(text);
+  appendMsg('user', text);
+}
+
+async function sendToAgent(text) {
+  chatHistory.push({ role: 'user', content: text });
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  const bubble = appendMsg('agent', '', true);
+  try {
+    const r = await fetch(`${BASE}/api/chat`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ messages: chatHistory })
+    });
+    const d = await r.json();
+    const reply = d.reply || 'No response.';
+    chatHistory.push({ role: 'assistant', content: reply });
+    bubble.textContent = reply;
+  } catch(e) {
+    bubble.textContent = '[WARN] Agent unreachable. Check API key in Railway settings.';
+  }
+  btn.disabled = false;
+}
+
+function onKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+  const ta = e.target; ta.style.height = '34px'; ta.style.height = Math.min(ta.scrollHeight, 96) + 'px';
+}
+
+// ── Logs ─────────────────────────────────────────────────────────────────────
+function renderLogs() {
+  const list = document.getElementById('logList');
+  list.innerHTML = logs.slice(0, 60).map(e =>
+    `<div class="log-row"><span class="lt">${e.t}</span><span class="ltype ${e.type}">${e.type.toUpperCase()}</span><span class="lmsg">${e.msg}</span></div>`
+  ).join('');
+  document.getElementById('logCount').textContent = logs.length + ' entries';
+}
+
+// ── Import modal ─────────────────────────────────────────────────────────────
+function showImport() { document.getElementById('importModal').style.display = 'flex'; }
+function hideImport() { document.getElementById('importModal').style.display = 'none'; }
+
+function triggerImport(type, source = '') {
+  currentImportType = type;
+  currentImportSource = source;
+  document.getElementById('fileInput').click();
+}
+
+async function uploadFile() {
+  const file = document.getElementById('fileInput').files[0];
+  if (!file) return;
+  hideImport();
+  const fd = new FormData();
+  fd.append('file', file);
+  if (currentImportSource) fd.append('source', currentImportSource);
+  try {
+    const endpoint = currentImportType === 'passwords' ? 'passwords' : currentImportType;
+    const r = await fetch(`${BASE}/api/import/${endpoint}`, { method: 'POST', body: fd });
+    const d = await r.json();
+    await loadQueue();
+    appendMsg('agent', `Import complete. ${d.count} accounts extracted and added to queue. Review them one by one — I'll guide you through each.`);
+  } catch(e) {
+    appendMsg('agent', `[WARN] Import failed: ${e.message}`);
+  }
+  document.getElementById('fileInput').value = '';
+}
+
+// ── Agent state ticker ───────────────────────────────────────────────────────
+const states = ['READY', 'SCANNING', 'PROCESSING', 'ARCHIVING', 'WAITING'];
+let si = 0;
+setInterval(() => {
+  document.getElementById('agentState').textContent = states[si++ % states.length];
+}, 5000);
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+connectWS();
+loadQueue();
+setInterval(loadQueue, 15000);
+
+// Boot message
+setTimeout(() => {
+  appendMsg('agent', `NEXUS-1 ONLINE.\n\nReady to process your accounts. To get started:\n→ Click "+ IMPORT" in the top bar\n→ Upload your Chrome History file, Firefox places.sqlite, or a password export CSV\n→ I'll parse it, build your queue, and walk you through each account\n\nType STATUS at any time for a summary.`);
+}, 500);
+</script>
+</body>
+</html>
